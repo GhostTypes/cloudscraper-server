@@ -1,65 +1,78 @@
-# cloudscraper-proxy
-A simple local proxy server, powered by [cloudscraper](https://github.com/VeNoMouS/cloudscraper)
-<br></br>
+# 👻 cloudscraper-proxy
 
-## Example
-Before (standard request, contents blocked by cloudflare)
+A simple local proxy server, powered by [cloudscraper](https://github.com/VeNoMouS/cloudscraper) library ☁️.
+> 💡 This allows you to easily bypass Cloudflare "restrictions" in your project, without having to add additional code
+
+---
+
+## 👀 See it in Action!
+
+**Before** (Standard request, 🧱 contents blocked by Cloudflare):
 ![image](https://github.com/user-attachments/assets/3ce7e244-8084-4e67-a904-e5a18d229899)
 
-After (using the local server, contents can be accessed normally)
+**After** (Using the local proxy ✅, contents accessed normally):
 ![image](https://github.com/user-attachments/assets/1b282213-6646-4011-abf0-5c19dc3de6d7)
 
+---
 
-## Usage
-Replace the requests you'd like to make in your project
-```
-https://www.google.com
-```
-with a request to the bypass server
-```
-localhost:port/api/proxy/https://www.google.com
-```
-Then start the server so your project can make requests to it
-```
-python server.py
-```
-That's it!
-<br></br>
+## 🚀 Getting Started
 
-## Configuration
-Changing the port can be done simply by editing the bottom of the file
-```
+1.  **Modify Your Requests:**
+    Instead of directly requesting a URL like:
+    ```
+    https://www.google.com
+    ```
+    Point it to your local proxy server:
+    ```
+    http://localhost:5000/api/proxy/https://www.google.com
+    ```
+    *(Replace `5000` if you change the default port)*
+
+2.  **Start the Proxy Server:**
+    Run the Python server:
+    ```bash
+    python server.py
+    ```
+
+That's it! 🎉 Your project can now make requests through the proxy.
+
+---
+
+## ⚙️ Configuration
+
+Want to change the port? Easy!
+
+Edit the `server.py` file at the bottom:
+```python
 if __name__ == "__main__":
-    print('Starting cloudflare bypass proxy server')
+    print('Starting Cloudflare bypass proxy server...')
     from waitress import serve
-    serve(app, host="0.0.0.0", port=5000) # change the port here
+    # 👇 Change the port here
+    serve(app, host="0.0.0.0", port=5000)
 ```
-Feel free to configure flask or other options to suite your needs
 
-## Using Make Commands
-The project includes several Make commands to help manage the Docker container:
-
-```bash
-# Build the Docker image
+## 🐳 Docker & Make Commands
+> 💡 The project includes several make commands to help manage the Docker container:
+```
+# 🏗️ Build the Docker image
 make build
 
-# Run the container
-make run 
+# ▶️ Run the Docker container (defaults to port 5000)
+make run
 
-# Build and run in one command
+# 🚀 Build and run in one go
 make up
 
-# Stop and remove the container
+# 🛑 Stop and remove the container
 make clean
 
-# View container logs
+# 📜 View container logs
 make logs
 
-# Restart the container 
+# 🔄 Restart the container
 make restart
 
-# Check container status
+# 📊 Check container status
 make status
 ```
-
-You can change the port and container settings by editing the variables at the top of the Makefile.
+> 🔧 You can change the port and container settings by editing the variables at the top of the makefile.
