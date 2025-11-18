@@ -7,26 +7,11 @@
   <img src="https://img.shields.io/badge/python-3.8+-blue?style=for-the-badge&logo=python&logoColor=white">
   <img src="https://img.shields.io/github/v/release/GhostTypes/cloudscraper-server?style=for-the-badge">
   <img src="https://img.shields.io/badge/docker-ready-blue?style=for-the-badge&logo=docker&logoColor=white">
-  <img src="https://img.shields.io/github/license/GhostTypes/cloudscraper-server?style=for-the-badge">
 </p>
 
 <div align="center">
   <p>This allows you to easily bypass Cloudflare "restrictions" in your project, without having to add additional code</p>
 </div>
-
----
-
-<div align="center">
-  <h2>See it in Action!</h2>
-</div>
-
-**Before** (Standard request, contents blocked by Cloudflare):
-
-![image](https://github.com/user-attachments/assets/3ce7e244-8084-4e67-a904-e5a18d229899)
-
-**After** (Using the local proxy, contents accessed normally):
-
-![image](https://github.com/user-attachments/assets/1b282213-6646-4011-abf0-5c19dc3de6d7)
 
 ---
 
