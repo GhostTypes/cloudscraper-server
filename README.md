@@ -19,26 +19,35 @@
   <h2>Getting Started</h2>
 </div>
 
-1.  **Modify Your Requests:**
+<div align="center">
+<table>
+  <tr>
+    <th>Step</th>
+    <th>Instructions</th>
+  </tr>
+  <tr>
+    <td><strong>1. Modify Your Requests</strong></td>
+    <td>
+      Instead of directly requesting a URL like:<br>
+      <code>https://www.google.com</code><br><br>
+      Point it to your local proxy server:<br>
+      <code>http://localhost:5000/api/proxy/https://www.google.com</code><br>
+      <em>(Replace <code>5000</code> if you change the default port)</em>
+    </td>
+  </tr>
+  <tr>
+    <td><strong>2. Start the Proxy Server</strong></td>
+    <td>
+      Run the Python server:<br>
+      <code>python server.py</code>
+    </td>
+  </tr>
+</table>
+</div>
 
-    Instead of directly requesting a URL like:
-    ```
-    https://www.google.com
-    ```
-    Point it to your local proxy server:
-    ```
-    http://localhost:5000/api/proxy/https://www.google.com
-    ```
-    *(Replace `5000` if you change the default port)*
-
-2.  **Start the Proxy Server:**
-
-    Run the Python server:
-    ```bash
-    python server.py
-    ```
-
-That's it! Your project can now make requests through the proxy.
+<div align="center">
+  <p>That's it! Your project can now make requests through the proxy.</p>
+</div>
 
 ---
 
@@ -46,9 +55,14 @@ That's it! Your project can now make requests through the proxy.
   <h2>Configuration</h2>
 </div>
 
-Want to change the port? Easy!
+<div align="center">
+  <p>Want to change the port? Easy!</p>
+</div>
 
-Edit the `server.py` file at the bottom:
+<div align="center">
+  <p>Edit the <code>server.py</code> file at the bottom:</p>
+</div>
+
 ```python
 if __name__ == "__main__":
     print('Starting Cloudflare bypass proxy server...')
