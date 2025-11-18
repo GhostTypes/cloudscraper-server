@@ -1,78 +1,123 @@
-# 👻 cloudscraper-proxy
+<div align="center">
+  <h1>cloudscraper-proxy</h1>
+  <p>A simple local proxy server, powered by <a href="https://github.com/VeNoMouS/cloudscraper">cloudscraper</a> library</p>
+</div>
 
-A simple local proxy server, powered by [cloudscraper](https://github.com/VeNoMouS/cloudscraper) library ☁️.
-> 💡 This allows you to easily bypass Cloudflare "restrictions" in your project, without having to add additional code
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.8+-blue?style=for-the-badge&logo=python&logoColor=white">
+  <img src="https://img.shields.io/github/v/release/GhostTypes/cloudscraper-server?style=for-the-badge">
+  <img src="https://img.shields.io/badge/docker-ready-blue?style=for-the-badge&logo=docker&logoColor=white">
+</p>
 
----
-
-## 👀 See it in Action!
-
-**Before** (Standard request, 🧱 contents blocked by Cloudflare):
-![image](https://github.com/user-attachments/assets/3ce7e244-8084-4e67-a904-e5a18d229899)
-
-**After** (Using the local proxy ✅, contents accessed normally):
-![image](https://github.com/user-attachments/assets/1b282213-6646-4011-abf0-5c19dc3de6d7)
-
----
-
-## 🚀 Getting Started
-
-1.  **Modify Your Requests:**
-    Instead of directly requesting a URL like:
-    ```
-    https://www.google.com
-    ```
-    Point it to your local proxy server:
-    ```
-    http://localhost:5000/api/proxy/https://www.google.com
-    ```
-    *(Replace `5000` if you change the default port)*
-
-2.  **Start the Proxy Server:**
-    Run the Python server:
-    ```bash
-    python server.py
-    ```
-
-That's it! 🎉 Your project can now make requests through the proxy.
+<div align="center">
+  <p>This allows you to easily bypass Cloudflare "restrictions" in your project, without having to add additional code</p>
+</div>
 
 ---
 
-## ⚙️ Configuration
+<div align="center">
+  <h2>Getting Started</h2>
+</div>
 
-Want to change the port? Easy!
+<div align="center">
+<table>
+  <tr>
+    <th>Step</th>
+    <th>Instructions</th>
+  </tr>
+  <tr>
+    <td><strong>1. Modify Your Requests</strong></td>
+    <td>
+      Instead of directly requesting a URL like:<br>
+      <code>https://www.google.com</code><br><br>
+      Point it to your local proxy server:<br>
+      <code>http://localhost:5000/api/proxy/https://www.google.com</code><br>
+      <em>(Replace <code>5000</code> if you change the default port)</em>
+    </td>
+  </tr>
+  <tr>
+    <td><strong>2. Start the Proxy Server</strong></td>
+    <td>
+      Run the Python server:<br>
+      <code>python server.py</code>
+    </td>
+  </tr>
+</table>
+</div>
 
-Edit the `server.py` file at the bottom:
+<div align="center">
+  <p>That's it! Your project can now make requests through the proxy.</p>
+</div>
+
+---
+
+<div align="center">
+  <h2>Configuration</h2>
+</div>
+
+<div align="center">
+  <p>Want to change the port? Easy!</p>
+</div>
+
+<div align="center">
+  <p>Edit the <code>server.py</code> file at the bottom:</p>
+</div>
+
 ```python
 if __name__ == "__main__":
     print('Starting Cloudflare bypass proxy server...')
     from waitress import serve
-    # 👇 Change the port here
+    # Change the port here
     serve(app, host="0.0.0.0", port=5000)
 ```
 
-## 🐳 Docker & Make Commands
-> 💡 The project includes several make commands to help manage the Docker container:
-```
-# 🏗️ Build the Docker image
-make build
+---
 
-# ▶️ Run the Docker container (defaults to port 5000)
-make run
+<div align="center">
+  <h2>Docker & Make Commands</h2>
+</div>
 
-# 🚀 Build and run in one go
-make up
+<div align="center">
+  <p>The project includes several make commands to help manage the Docker container</p>
+</div>
 
-# 🛑 Stop and remove the container
-make clean
+<div align="center">
+<table>
+  <tr>
+    <th>Command</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td><code>make build</code></td>
+    <td>Build the Docker image</td>
+  </tr>
+  <tr>
+    <td><code>make run</code></td>
+    <td>Run the Docker container (defaults to port 5000)</td>
+  </tr>
+  <tr>
+    <td><code>make up</code></td>
+    <td>Build and run in one go</td>
+  </tr>
+  <tr>
+    <td><code>make clean</code></td>
+    <td>Stop and remove the container</td>
+  </tr>
+  <tr>
+    <td><code>make logs</code></td>
+    <td>View container logs</td>
+  </tr>
+  <tr>
+    <td><code>make restart</code></td>
+    <td>Restart the container</td>
+  </tr>
+  <tr>
+    <td><code>make status</code></td>
+    <td>Check container status</td>
+  </tr>
+</table>
+</div>
 
-# 📜 View container logs
-make logs
-
-# 🔄 Restart the container
-make restart
-
-# 📊 Check container status
-make status
-```
-> 🔧 You can change the port and container settings by editing the variables at the top of the makefile.
+<div align="center">
+  <p>You can change the port and container settings by editing the variables at the top of the makefile.</p>
+</div>
