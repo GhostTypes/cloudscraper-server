@@ -75,10 +75,9 @@ def clean_headers(response):
 def generate_proxy_response(response) -> Response:
     content_type = response.headers.get('content-type', '')
 
-    if 'text' in content_type or 'html' in content_type:
-        content = response.text
-    else:
-        content = response.content
+    # OPTIMIZATION: Use .content (bytes) to avoid decoding overhead
+    # This provides significant performance improvement and avoids potential transcoding issues.
+    content = response.content
 
     headers = clean_headers(response)
 
@@ -88,7 +87,8 @@ def generate_proxy_response(response) -> Response:
 
     # For HTML content
     if 'text/html' in content_type:
-        return Response(content, status=response.status_code, content_type='text/html; charset=utf-8')
+        # Use the original content type to ensure charset matches the raw bytes
+        return Response(content, status=response.status_code, content_type=content_type)
 
     # For all other content types
     return Response(
