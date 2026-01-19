@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/GhostTypes/cloudscraper-server/compare/v1.0.1...v1.0.2) (2026-01-19)
+
+
+### Performance Improvements
+
+* Use response.content to avoid decoding overhead in proxy ([1a3fb8f](https://github.com/GhostTypes/cloudscraper-server/commit/1a3fb8fcdd5fd8c0917e6277ac3975328300818a))
+
 ## [1.0.1](https://github.com/GhostTypes/cloudscraper-server/compare/v1.0.0...v1.0.1) (2025-11-18)
 
 
