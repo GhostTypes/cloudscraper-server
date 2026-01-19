@@ -1,7 +1,9 @@
 import cloudscraper
 import time
+import socket
+import ipaddress
 
-from urllib.parse import unquote
+from urllib.parse import unquote, urlparse
 from flask import Flask, request, Response
 
 scraper = cloudscraper.create_scraper(
@@ -41,11 +43,42 @@ def set_origin_and_ref(headers, origin, ref):
 
 def generate_origin_and_ref(url, headers):
     data = url.split('/')
-    first = data[0]
-    base = data[2]
-    c_url = f"{first}//{base}/"
-    headers = set_origin_and_ref(headers, c_url, c_url)
+    if len(data) > 2:
+        first = data[0]
+        base = data[2]
+        c_url = f"{first}//{base}/"
+        headers = set_origin_and_ref(headers, c_url, c_url)
     return headers
+
+
+def is_safe_url(url):
+    """
+    Validates URL to prevent SSRF attacks by blocking local/private IP ranges.
+    """
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ('http', 'https'):
+            return False, "Only HTTP/HTTPS protocols are allowed"
+
+        hostname = parsed.hostname
+        if not hostname:
+            return False, "Invalid hostname"
+
+        try:
+            # Resolve hostname to IP to check against blocklist
+            ip_str = socket.gethostbyname(hostname)
+            ip = ipaddress.ip_address(ip_str)
+        except (socket.gaierror, ValueError):
+            # If we can't resolve it, it might be safer to block or allow if it's external.
+            # For security, fail closed if resolution fails.
+            return False, "Could not resolve hostname or invalid IP"
+
+        if ip.is_loopback or ip.is_private or ip.is_reserved or ip.is_multicast or ip.is_unspecified:
+            return False, "Access to private/local network is forbidden"
+
+        return True, None
+    except Exception:
+        return False, "Invalid URL format"
 
 
 app = Flask(__name__)
@@ -133,11 +166,18 @@ def get_proxy_request_headers(req, url):
 def handle_proxy(url):
     if request.method == 'GET':
         full_url = get_proxy_request_url(request, url)  # parse request url
+
+        # Sentinel: SSRF Protection
+        is_safe, error_msg = is_safe_url(full_url)
+        if not is_safe:
+            return {'error': error_msg}, 400
+
         headers = get_proxy_request_headers(request, url)  # generate headers for the request
 
         try:
             start = time.time()
-            response = scraper.get(full_url, headers=headers)
+            # Sentinel: Added timeout to prevent hanging
+            response = scraper.get(full_url, headers=headers, timeout=30)
             end = time.time()
             elapsed = end - start
             print(f"Proxied request for {full_url.split('?')[0]} in {elapsed:.6f} seconds")
@@ -147,7 +187,8 @@ def handle_proxy(url):
 
         except Exception as e:
             print(f"Proxy Request Error: {str(e)}")
-            return {'error': str(e)}, 500
+            # Sentinel: Don't leak stack traces or internal details
+            return {'error': "Proxy request failed. Check server logs for details."}, 500
 
 
 if __name__ == "__main__":
