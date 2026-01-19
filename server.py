@@ -65,32 +65,21 @@ HOP_BY_HOP_HEADERS = {
 def clean_headers(response):
     headers = {}
     for name, value in response.headers.items():
-        if name.lower() not in HOP_BY_HOP_HEADERS:
-            headers[name] = value
-    headers.pop('content-encoding', None)
-    headers.pop('content-length', None)
+        name_lower = name.lower()
+        if name_lower in HOP_BY_HOP_HEADERS:
+            continue
+        if name_lower in ['content-encoding', 'content-length']:
+            continue
+        headers[name] = value
     return headers
 
 
 def generate_proxy_response(response) -> Response:
-    content_type = response.headers.get('content-type', '')
-
-    if 'text' in content_type or 'html' in content_type:
-        content = response.text
-    else:
-        content = response.content
-
+    # Always use content (bytes) to avoid decoding/encoding overhead
+    # and to preserve original encoding.
+    content = response.content
     headers = clean_headers(response)
 
-    # For JSON content
-    if 'application/json' in content_type:
-        return Response(content, status=response.status_code, content_type='application/json')
-
-    # For HTML content
-    if 'text/html' in content_type:
-        return Response(content, status=response.status_code, content_type='text/html; charset=utf-8')
-
-    # For all other content types
     return Response(
         content,
         status=response.status_code,
@@ -98,16 +87,18 @@ def generate_proxy_response(response) -> Response:
     )
 
 
+BASE_HEADERS = {
+    'Accept': 'application/json, text/plain, */*',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Connection': 'keep-alive'
+}
+set_user_agent(BASE_HEADERS)
+set_security_headers(BASE_HEADERS)
+
+
 def get_headers():
-    headers = {
-        'Accept': 'application/json, text/plain, */*',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Connection': 'keep-alive'
-    }
-    headers = set_user_agent(headers)
-    headers = set_security_headers(headers)
-    return headers
+    return BASE_HEADERS.copy()
 
 
 def get_proxy_request_url(req, url):
