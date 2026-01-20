@@ -2,77 +2,78 @@ import subprocess
 import time
 import requests
 import sys
-import os
+import pytest
 
 SERVER_PORT = 5000
 BASE_URL = f"http://localhost:{SERVER_PORT}"
+
 
 def wait_for_server():
     retries = 30
     while retries > 0:
         try:
             # The root path 404s, but connection refused means it's not up
-            requests.get(BASE_URL)
+            requests.get(BASE_URL, timeout=1)
             return True
-        except requests.exceptions.ConnectionError:
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             time.sleep(0.5)
             retries -= 1
     return False
 
+
 def test_ssrf():
     print("Starting server...")
-    # Start server in background
-    # We use sys.executable to ensure we use the same python interpreter
-    process = subprocess.Popen([sys.executable, "server.py"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # Start server in background with different port
+    env = {**subprocess.os.environ, 'PORT': str(SERVER_PORT)}
+    process = subprocess.Popen(
+        [sys.executable, "-c", f"import server; server.app.run(host='localhost', port={SERVER_PORT})"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
 
     try:
         if not wait_for_server():
-            print("Server failed to start")
-            sys.exit(1)
+            stdout, stderr = process.communicate()
+            print(f"Server failed to start. stdout: {stdout.decode()}, stderr: {stderr.decode()}")
+            pytest.fail("Server failed to start within timeout")
 
         print("Server started. Running tests...")
 
-        # Test 1: Proxy to google.com (Valid)
-        # We might not have internet access in some sandboxes, but let's assume we do or handle it.
-        # If we don't have internet, this might fail with connection error, but the status code won't be 400 from our validation.
-        print("Testing valid external URL...")
-        try:
-            resp = requests.get(f"{BASE_URL}/api/proxy/http://example.com")
-            print(f"External URL Status: {resp.status_code}")
-            # It might be 200 or 500 depending on network, but we are looking for behavior.
-        except Exception as e:
-            print(f"External URL Request failed: {e}")
-
-        # Test 2: SSRF to localhost (Vulnerability)
-        # We try to proxy to the server itself.
-        # Since the server has no root route, accessing http://127.0.0.1:5000/ should return 404.
-        # If the proxy works, it will return that 404 (or 500 if recursive blowup).
-        # If blocked, it should return 400 (or whatever we decide).
+        # Test 1: SSRF to localhost (should be blocked)
         print("Testing SSRF to localhost...")
         target_url = f"http://127.0.0.1:{SERVER_PORT}/"
         proxy_url = f"{BASE_URL}/api/proxy/{target_url}"
 
         resp = requests.get(proxy_url)
         print(f"SSRF Status: {resp.status_code}")
+        print(f"SSRF Response: {resp.text}")
 
-        # In the vulnerable state, we expect the code to execute the request.
-        # Since 127.0.0.1:5000/ returns 404, the proxy will return 404.
-        if resp.status_code == 404:
-            print("VULNERABILITY CONFIRMED: Proxied request to localhost (received 404 from internal).")
-        elif resp.status_code == 200:
-             print("VULNERABILITY CONFIRMED: Proxied request to localhost (received 200).")
-        elif resp.status_code == 500:
-            # 500 could mean it tried and failed (e.g. max retries), which still means it tried.
-            print("VULNERABILITY CONFIRMED: Proxied request to localhost (received 500).")
-        elif resp.status_code == 400 or resp.status_code == 403:
-            print("SECURE: Request to localhost blocked.")
-        else:
-            print(f"Unexpected status: {resp.status_code}")
+        # Should return 403 (Forbidden) for blocked requests
+        assert resp.status_code == 403, f"Expected 403 for localhost, got {resp.status_code}"
+        assert "forbidden" in resp.text.lower() or "private" in resp.text.lower(), "Expected blocking error message"
+
+        # Test 2: SSRF to private IP (should be blocked)
+        print("Testing SSRF to private IP...")
+        resp = requests.get(f"{BASE_URL}/api/proxy/http://192.168.1.1/")
+        print(f"Private IP Status: {resp.status_code}")
+        assert resp.status_code == 403, f"Expected 403 for private IP, got {resp.status_code}"
+
+        # Test 3: Valid external URL format (will fail to connect, but shouldn't be blocked by SSRF)
+        print("Testing valid external URL format...")
+        resp = requests.get(f"{BASE_URL}/api/proxy/http://example.com/")
+        print(f"External URL Status: {resp.status_code}")
+        # Should NOT return 403 - the SSRF check should pass
+        assert resp.status_code != 403, "External URL should not be blocked by SSRF check"
 
     finally:
         print("Stopping server...")
         process.terminate()
-        process.wait()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+
 
 if __name__ == "__main__":
     test_ssrf()
