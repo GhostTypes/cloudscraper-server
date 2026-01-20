@@ -4,6 +4,7 @@ import socket
 import ipaddress
 
 from urllib.parse import unquote, urlparse
+from functools import lru_cache
 from flask import Flask, request, Response
 
 scraper = cloudscraper.create_scraper(
@@ -51,6 +52,12 @@ def generate_origin_and_ref(url, headers):
     return headers
 
 
+@lru_cache(maxsize=128)
+def resolve_hostname(hostname):
+    # OPTIMIZATION: Cache DNS lookups to reduce blocking I/O in is_safe_url
+    return socket.gethostbyname(hostname)
+
+
 def is_safe_url(url):
     """
     Validates URL to prevent SSRF attacks by blocking local/private IP ranges.
@@ -66,7 +73,7 @@ def is_safe_url(url):
 
         try:
             # Resolve hostname to IP to check against blocklist
-            ip_str = socket.gethostbyname(hostname)
+            ip_str = resolve_hostname(hostname)
             ip = ipaddress.ip_address(ip_str)
         except (socket.gaierror, ValueError):
             # If we can't resolve it, it might be safer to block or allow if it's external.
@@ -154,9 +161,9 @@ def get_proxy_request_headers(req, url):
     headers = get_headers()
     headers['Accept-Encoding'] = 'gzip, deflate, br'
 
-    for header in req.headers:
-        if header[0].lower() not in ['host', 'connection', 'content-length']:
-            headers[header[0]] = header[1]
+    for key, value in req.headers.items():
+        if key.lower() not in ['host', 'connection', 'content-length']:
+            headers[key] = value
     headers = generate_origin_and_ref(url, headers)
     return headers
 
