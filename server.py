@@ -65,16 +65,22 @@ def is_safe_url(url):
             return False, "Invalid hostname"
 
         try:
-            # Resolve hostname to IP to check against blocklist
-            ip_str = socket.gethostbyname(hostname)
-            ip = ipaddress.ip_address(ip_str)
-        except (socket.gaierror, ValueError):
-            # If we can't resolve it, it might be safer to block or allow if it's external.
-            # For security, fail closed if resolution fails.
-            return False, "Could not resolve hostname or invalid IP"
+            # Resolve hostname to IP(s) to check against blocklist.
+            # We use getaddrinfo to get all resolved IPs (IPv4 and IPv6) to prevent evasion
+            # where a hostname resolves to both a safe IP and a private IP.
+            addr_info = socket.getaddrinfo(hostname, None)
 
-        if ip.is_loopback or ip.is_private or ip.is_reserved or ip.is_multicast or ip.is_unspecified:
-            return False, "Access to private/local network is forbidden"
+            for family, _, _, _, sockaddr in addr_info:
+                # sockaddr is (address, port) for AF_INET and (address, port, flow info, scope id) for AF_INET6
+                ip_str = sockaddr[0]
+                ip = ipaddress.ip_address(ip_str)
+
+                if ip.is_loopback or ip.is_private or ip.is_reserved or ip.is_multicast or ip.is_unspecified:
+                    return False, "Access to private/local network is forbidden"
+
+        except (socket.gaierror, ValueError):
+            # If we can't resolve it, fail closed.
+            return False, "Could not resolve hostname or invalid IP"
 
         return True, None
     except Exception:
