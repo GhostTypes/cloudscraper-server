@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/GhostTypes/cloudscraper-server/compare/v1.1.0...v1.1.1) (2026-01-20)
+
+
+### Bug Fixes
+
+* repair SSRF integration test ([3352a04](https://github.com/GhostTypes/cloudscraper-server/commit/3352a0484ebb77075be787c181b42ae77dfa78fc))
+
 # [1.1.0](https://github.com/GhostTypes/cloudscraper-server/compare/v1.0.2...v1.1.0) (2026-01-20)
 
 
