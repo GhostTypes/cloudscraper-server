@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/GhostTypes/cloudscraper-server/compare/v1.0.2...v1.1.0) (2026-01-20)
+
+
+### Features
+
+* fix SSRF bypass vulnerability with IPv6 support ([8c92d8a](https://github.com/GhostTypes/cloudscraper-server/commit/8c92d8a002b61f71473233c73f3ee28814adb957))
+
 ## [1.0.2](https://github.com/GhostTypes/cloudscraper-server/compare/v1.0.1...v1.0.2) (2026-01-19)
 
 
