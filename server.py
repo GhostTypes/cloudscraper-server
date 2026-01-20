@@ -1,7 +1,7 @@
 import cloudscraper
-import time
-import socket
 import ipaddress
+import socket
+import time
 
 from urllib.parse import unquote, urlparse
 from flask import Flask, request, Response
@@ -54,6 +54,11 @@ def generate_origin_and_ref(url, headers):
 def is_safe_url(url):
     """
     Validates URL to prevent SSRF attacks by blocking local/private IP ranges.
+    Uses getaddrinfo to resolve ALL IP addresses (IPv4 and IPv6) to prevent
+    bypass via dual-stack hostnames that resolve to both public and private IPs.
+
+    Returns:
+        tuple: (is_safe: bool, error_message: str | None)
     """
     try:
         parsed = urlparse(url)
@@ -61,20 +66,27 @@ def is_safe_url(url):
             return False, "Only HTTP/HTTPS protocols are allowed"
 
         hostname = parsed.hostname
+
         if not hostname:
             return False, "Invalid hostname"
 
         try:
-            # Resolve hostname to IP to check against blocklist
-            ip_str = socket.gethostbyname(hostname)
-            ip = ipaddress.ip_address(ip_str)
-        except (socket.gaierror, ValueError):
-            # If we can't resolve it, it might be safer to block or allow if it's external.
-            # For security, fail closed if resolution fails.
-            return False, "Could not resolve hostname or invalid IP"
+            # Resolve hostname to IP(s) to check against blocklist.
+            # We use getaddrinfo to get all resolved IPs (IPv4 and IPv6) to prevent evasion
+            # where a hostname resolves to both a safe IP and a private IP.
+            addr_info = socket.getaddrinfo(hostname, None)
 
-        if ip.is_loopback or ip.is_private or ip.is_reserved or ip.is_multicast or ip.is_unspecified:
-            return False, "Access to private/local network is forbidden"
+            for family, _, _, _, sockaddr in addr_info:
+                # sockaddr is (address, port) for AF_INET and (address, port, flow info, scope id) for AF_INET6
+                ip_str = sockaddr[0]
+                ip = ipaddress.ip_address(ip_str)
+
+                if ip.is_loopback or ip.is_private or ip.is_reserved or ip.is_multicast or ip.is_unspecified:
+                    return False, "Access to private/local network is forbidden"
+
+        except (socket.gaierror, ValueError):
+            # If we can't resolve it, fail closed.
+            return False, "Could not resolve hostname or invalid IP"
 
         return True, None
     except Exception:
@@ -154,9 +166,9 @@ def get_proxy_request_headers(req, url):
     headers = get_headers()
     headers['Accept-Encoding'] = 'gzip, deflate, br'
 
-    for header in req.headers:
-        if header[0].lower() not in ['host', 'connection', 'content-length']:
-            headers[header[0]] = header[1]
+    for key, value in req.headers.items():
+        if key.lower() not in ['host', 'connection', 'content-length']:
+            headers[key] = value
     headers = generate_origin_and_ref(url, headers)
     return headers
 
@@ -167,16 +179,16 @@ def handle_proxy(url):
     if request.method == 'GET':
         full_url = get_proxy_request_url(request, url)  # parse request url
 
-        # Sentinel: SSRF Protection
+        # SSRF protection check
         is_safe, error_msg = is_safe_url(full_url)
         if not is_safe:
-            return {'error': error_msg}, 400
+            print(f"SSRF blocked: {full_url} - {error_msg}")
+            return {'error': error_msg}, 403
 
         headers = get_proxy_request_headers(request, url)  # generate headers for the request
 
         try:
             start = time.time()
-            # Sentinel: Added timeout to prevent hanging
             response = scraper.get(full_url, headers=headers, timeout=30)
             end = time.time()
             elapsed = end - start
@@ -187,7 +199,7 @@ def handle_proxy(url):
 
         except Exception as e:
             print(f"Proxy Request Error: {str(e)}")
-            # Sentinel: Don't leak stack traces or internal details
+            # Don't leak stack traces or internal details
             return {'error': "Proxy request failed. Check server logs for details."}, 500
 
 
